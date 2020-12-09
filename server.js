@@ -37,8 +37,56 @@ app.post(
   "/api/exercise/new-user",
   bodyParser.urlencoded({ extended: false }),
   (req, res) => {
-    console.log(req.body);
-    res.json({});
+    let newUser = new User({ username: req.body.username });
+    newUser.save((err, savedUser) => {
+      if (!err) {
+        let responseObject = {};
+        responseObject.username = savedUser.username;
+        responseObject._id = savedUser.id;
+        res.json(responseObject);
+      }
+    });
+  }
+);
+
+app.get("/api/exercise/users", (req, res) => {
+  User.find({}, (err, arrayOfUsers) => {
+    if (!err) {
+      res.json({ arrayOfUsers });
+    }
+  });
+});
+
+app.post(
+  "/api/exercise/add",
+  bodyParser.urlencoded({ extended: false }),
+  (req, res) => {
+    let newSession = new Session({
+      description: req.body.description,
+      duration: parseInt(req.body.duration),
+      date: req.body.date, // req.body.date === '' ? new Date().toISOString().substring(0,10) : req.body.date
+    });
+
+    if (newSession.date === "") {
+      newSession.date = new Date().toISOString().substring(0, 10);
+    }
+
+    User.findByIdAndUpdate(
+      req.body.userId,
+      { $push: { log: newSession } },
+      { new: true },
+      (err, updatedUser) => {
+        if (!err) {
+          let responseObject = {};
+          responseObject._id = updatedUser.id;
+          responseObject.username = updatedUser.username;
+          responseObject.date = new Date(newSession.date).toDateString();
+          responseObject.description = newSession.description;
+          responseObject.duration = newSession.duration;
+          res.json(responseObject);
+        }
+      }
+    );
   }
 );
 
