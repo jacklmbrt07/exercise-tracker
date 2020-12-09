@@ -90,6 +90,42 @@ app.post(
   }
 );
 
+app.get("/api/exercise/log", (req, res) => {
+  User.findById(req.query.userId, (err, result) => {
+    if (!err) {
+      let responseObject = result;
+
+      if (req.query.from || req.query.to) {
+        let fromDate = new Date(0);
+        let toDate = new Date();
+
+        if (req.query.from) {
+          fromDate = new Date(req.query.from);
+        }
+
+        if (req.query.to) {
+          toDate = new Date(req.query.to);
+        }
+
+        fromDate = fromDate.getTime();
+        toDate = toDate.getTime();
+
+        responseObject.log = responseObject.log.filter((session) => {
+          let sessionDate = new Date(session.date).getTime();
+          return sessionDate >= fromDate && sessionDate <= toDate;
+        });
+      }
+
+      if (req.query.limit) {
+        responseObject.log = responseObject.log.slice(0, req.query.limit);
+      }
+
+      responseObject.count = result.log.length;
+      res.json(responseObject);
+    }
+  });
+});
+
 //Listener
 const listener = app.listen(process.env.PORT || 3000, () => {
   console.log("Your app is listening on port " + listener.address().port);
